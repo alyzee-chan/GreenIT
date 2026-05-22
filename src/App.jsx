@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import VirtualBuilder from './pages/VirtualBuilder';
 import WaterUsage from './pages/WaterUsage';
-import { Minerals } from './pages/Placeholders';
+import Minerals from './pages/Minerals';
 import './App.css';
 
 const AnimatedRoutes = () => {
