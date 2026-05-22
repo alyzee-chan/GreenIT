@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   BarChart, Bar, Legend, PieChart, Pie, Cell, LineChart, Line 
 } from 'recharts';
-import { Droplet, HardDrive, Zap, AlertTriangle, Monitor, Activity, ExternalLink, Lightbulb, Battery, Cpu } from 'lucide-react';
+import { Droplet, HardDrive, Zap, AlertTriangle, Monitor, Activity, ExternalLink, Lightbulb, Battery, Cpu, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // --- Real Data based on recent studies (2024) ---
@@ -239,8 +239,8 @@ const Dashboard = () => {
       
       {/* Sources Section */}
       <motion.div id="sources" className="card" style={{ marginTop: '2rem', backgroundColor: 'var(--surface)' }} variants={cardVariants} initial="hidden" animate="visible">
-        <h3 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>
-          📚 Bibliographie & Sources de Données Réelles
+        <h3 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <BookOpen size={22} color="var(--primary)" /> Bibliographie & Sources de Données Réelles
         </h3>
         <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.8' }}>
           <li><strong>Consommation d'eau (GPT-3/4) :</strong> L'entraînement de GPT-3 a nécessité environ 700 000 litres d'eau douce pour le refroidissement. GPT-4, étant massivement plus large, est estimé consommer jusqu'à 10 fois plus (Étude de l'Université de Californie, Riverside). L'empreinte mondiale de l'IA atteindra 4.2 à 6.6 milliards de m³ d'ici 2027.</li>

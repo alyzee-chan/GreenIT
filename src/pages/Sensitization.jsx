@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, CheckSquare, ShieldCheck, HeartHandshake, Leaf, Info, Award } from 'lucide-react';
+import { BookOpen, CheckSquare, ShieldCheck, HeartHandshake, Leaf, Info, Award, ShieldAlert, TrendingUp } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -116,7 +116,9 @@ const Sensitization = () => {
           >
             <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)' }}>📚 Les Références Fondatrices</h2>
+                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BookOpen size={22} color="var(--primary)" /> Les Références Fondatrices
+                </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6' }}>
                   Afin de comprendre le mouvement **Green IT / Informatique Responsable**, les chercheurs et experts mondiaux se concentrent sur la quantification des émissions de gaz à effet de serre et l'analyse de cycle de vie (ACV) des appareils technologiques.
                 </p>
@@ -138,7 +140,9 @@ const Sensitization = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)' }}>⚠️ Les Risques Globaux pour l'Écosystème</h2>
+                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldAlert size={22} color="#D97706" /> Les Risques Globaux pour l'Écosystème
+                </h2>
                 
                 <div className="card" style={{ background: '#FFFBEB', borderColor: '#FEF3C7' }}>
                   <h4 style={{ color: '#B45309', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -174,7 +178,9 @@ const Sensitization = () => {
           >
             <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', marginBottom: '1rem' }}>✓ Votre Feuille de Route Interactive</h2>
+                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckSquare size={22} color="var(--primary)" /> Votre Feuille de Route Interactive
+                </h2>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
                   Cochez les actions que vous appliquez déjà (ou vous engagez à appliquer) pour mesurer votre contribution environnementale.
                 </p>
@@ -251,7 +257,7 @@ const Sensitization = () => {
             <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '4px solid var(--secondary)' }}>
                 <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary-dark)' }}>
-                  🔮 L'IA pour Réduire les Émissions Globales
+                  <TrendingUp size={20} color="var(--secondary)" /> L'IA pour Réduire les Émissions Globales
                 </h3>
                 <p style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-muted)' }}>
                   Bien que l'IA ait une empreinte matérielle forte, elle est également **un levier de transition environnementale sans précédent**. Une IA bien canalisée peut aider d'autres industries majeures à réduire massivement leur pollution :
@@ -265,7 +271,7 @@ const Sensitization = () => {
 
               <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '4px solid var(--primary)' }}>
                 <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-dark)' }}>
-                  🌲 Préservation de la Biodiversité
+                  <Leaf size={20} color="var(--primary)" /> Préservation de la Biodiversité
                 </h3>
                 <p style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-muted)' }}>
                   Des initiatives concrètes s'appuient sur l'IA pour protéger la nature :
