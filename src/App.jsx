@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import VirtualBuilder from './pages/VirtualBuilder';
 import WaterUsage from './pages/WaterUsage';
 import Minerals from './pages/Minerals';
+import Sensitization from './pages/Sensitization';
 import './App.css';
 
 const AnimatedRoutes = () => {
@@ -18,6 +19,7 @@ const AnimatedRoutes = () => {
         <Route path="/builder" element={<VirtualBuilder />} />
         <Route path="/water-usage" element={<WaterUsage />} />
         <Route path="/minerals" element={<Minerals />} />
+        <Route path="/sensitization" element={<Sensitization />} />
       </Routes>
     </AnimatePresence>
   );

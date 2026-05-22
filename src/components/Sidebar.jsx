@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Cpu, Leaf, Droplets, LineChart } from 'lucide-react';
+import { LayoutDashboard, Cpu, Leaf, Droplets, LineChart, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Sidebar = () => {
@@ -49,6 +49,14 @@ const Sidebar = () => {
         >
           <motion.div whileHover={{ scale: 1.2, rotate: 5 }}><LineChart className="nav-icon" /></motion.div>
           <span>Marché des Minéraux</span>
+        </NavLink>
+
+        <NavLink 
+          to="/sensitization" 
+          className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
+        >
+          <motion.div whileHover={{ scale: 1.2, rotate: 5 }}><BookOpen className="nav-icon" /></motion.div>
+          <span>Sensibilisation</span>
         </NavLink>
       </nav>
       
