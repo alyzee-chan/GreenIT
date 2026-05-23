@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Cpu, TrendingUp, AlertOctagon, Layers, ArrowRight, ShieldAlert } from 'lucide-react';
+import { getWithFallback } from '../api/client';
+import { FB_MINERALS } from '../api/fallback';
+import DataSourceBadge from '../components/DataSourceBadge';
+
+const MINERAL_COLORS = {
+  Cobalt: '#EF4444', Lithium: '#F59E0B', 'Coltan (Tantale)': '#8B5CF6',
+  Neodyme: '#0EA5E9', Néodyme: '#0EA5E9', Cuivre: '#10B981', Nickel: '#64748B',
+};
+const colorFor = (name) => MINERAL_COLORS[name] || '#0EA5E9';
 
 // --- Base Exhaustion Years (at current consumption) ---
 const BASE_MINERALS = [
@@ -38,12 +47,36 @@ const itemVariants = {
 
 const Minerals = () => {
   const [aiGrowth, setAiGrowth] = useState(100); // Percentage growth of AI (100% = current baseline)
+  const [minerals, setMinerals] = useState(BASE_MINERALS);
+  const [live, setLive] = useState(false);
   const [prices, setPrices] = useState({
     Lithium: 14200,
     Cobalt: 28500,
     Neodyne: 85400,
     Cuivre: 9800
   });
+
+  // --- Load minerals from the backend (with offline fallback) ---
+  useEffect(() => {
+    (async () => {
+      const res = await getWithFallback('/minerals', FB_MINERALS);
+      setLive(res.live);
+      const mapped = res.data.map((m) => ({
+        name: m.name,
+        baseExhaustion: m.baseExhaustionYear,
+        risk: m.riskLevel,
+        color: colorFor(m.name),
+      }));
+      if (mapped.length) setMinerals(mapped);
+      const byName = Object.fromEntries(res.data.map((m) => [m.name, m.pricePerTon]));
+      setPrices((prev) => ({
+        Lithium: byName.Lithium ?? prev.Lithium,
+        Cobalt: byName.Cobalt ?? prev.Cobalt,
+        Neodyne: byName.Neodyme ?? prev.Neodyne,
+        Cuivre: byName.Cuivre ?? prev.Cuivre,
+      }));
+    })();
+  }, []);
 
   // --- Real-time Simulated API Market Price Ticker ---
   useEffect(() => {
@@ -71,7 +104,7 @@ const Minerals = () => {
     const data = [];
     for (let year = 2026; year <= 2075; year += 5) {
       const point = { year: year.toString() };
-      BASE_MINERALS.forEach(m => {
+      minerals.forEach(m => {
         const exhaust = calculateExhaustion(m.baseExhaustion);
         // Depletion curve: start at 100% and reach 0% at exhaustion year
         const yearsTotal = exhaust - 2026;
@@ -94,14 +127,17 @@ const Minerals = () => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <motion.div className="page-header" variants={itemVariants} initial="hidden" animate="visible">
-        <h1 className="page-title" style={{ fontSize: '2.2rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <TrendingUp color="var(--primary)" />
-          Marché & Prédiction des Minéraux Rares
-        </h1>
-        <p className="page-subtitle" style={{ fontSize: '1.1rem' }}>
-          Modélisation prédictive de l'épuisement des ressources minérales critiques face au boom de l'IA.
-        </p>
+      <motion.div className="page-header" variants={itemVariants} initial="hidden" animate="visible" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title" style={{ fontSize: '2.2rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <TrendingUp color="var(--primary)" />
+            Marché & Prédiction des Minéraux Rares
+          </h1>
+          <p className="page-subtitle" style={{ fontSize: '1.1rem' }}>
+            Modélisation prédictive de l'épuisement des ressources minérales critiques face au boom de l'IA.
+          </p>
+        </div>
+        <DataSourceBadge live={live} />
       </motion.div>
 
       {/* Real-time simulated price API ticker */}
@@ -156,7 +192,7 @@ const Minerals = () => {
                 <YAxis tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <RechartsTooltip formatter={(value) => [`${value}%`, 'Réserves']} />
                 <Legend />
-                {BASE_MINERALS.map(m => (
+                {minerals.map(m => (
                   <Line key={m.name} type="monotone" dataKey={m.name} stroke={m.color} strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                 ))}
               </LineChart>
@@ -168,7 +204,7 @@ const Minerals = () => {
         <motion.div className="card" variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <h3 className="chart-title">Paramètres de Croissance</h3>
           
-          <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          <div style={{ background: 'var(--surface-2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <label style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span>Croissance Annuelle IA</span>
               <span style={{ color: 'var(--primary-dark)' }}>{aiGrowth}%</span>
@@ -191,7 +227,7 @@ const Minerals = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Horizons d'Épuisement Prévus</h4>
             
-            {BASE_MINERALS.map(m => {
+            {minerals.map(m => {
               const exhaustYear = calculateExhaustion(m.baseExhaustion);
               return (
                 <div key={m.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#FFFBEB', borderRadius: '8px', border: '1px solid #FEF3C7' }}>

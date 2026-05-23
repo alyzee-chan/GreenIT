@@ -1,48 +1,87 @@
-# 🌱 GreenIT.ai - Plateforme de Suivi Environnemental de l'IA
+# GreenIT — Frontend (React)
 
-**GreenIT.ai** est une application web interactive développée en React visant à sensibiliser, analyser et réduire l'impact environnemental (informatique verte) lié à l'entraînement et à l'utilisation massive des modèles d'Intelligence Artificielle.
+Interface de la plateforme **GreenIT** : veille environnementale du numérique avec un focus
+Afrique subsaharienne. SPA React moderne, animée, avec thème clair/sombre et bilingue (FR/EN).
 
-## 🎯 Objectif du Projet
+## Stack
 
-L'entraînement des grands modèles de langage (LLM) comme GPT nécessite des ressources matérielles colossales. L'objectif de cette plateforme est de rendre ces concepts abstraits intelligibles pour tous (informaticiens et grand public) en s'appuyant sur des **données scientifiques réelles** (IEA, Université de Californie, ONU).
+| Composant | Technologie |
+|---|---|
+| Framework | React 19 + Vite |
+| Routing | React Router v7 |
+| État | Zustand (auth + thème, persistés) |
+| HTTP | Axios (intercepteur JWT + fallback démo) |
+| Graphiques | Recharts |
+| Cartes | Leaflet / React-Leaflet |
+| Animations | Framer Motion |
+| i18n | i18next / react-i18next (FR, EN) |
+| Icônes | lucide-react |
 
-## ✨ Fonctionnalités Principales
+## Prérequis
 
-*   📊 **Dashboard Analytique "True Pro"** : Télémétrie et visualisation des données (Croissance énergétique, Empreinte hydrique, E-Waste).
-*   🖥️ **Virtual Builder (Simulateur)** : Un constructeur d'infrastructure IA. Sélectionnez vos composants (CPU, Stockage) et l'application vous propose des alternatives éco-responsables en temps réel pour minimiser l'épuisement des minéraux.
-*   💧 **Module Ressources en Eau** : Analyse comparative des technologies de refroidissement (Air, Tours d'évaporation, Immersion liquide).
-*   💡 **Bloc de Sensibilisation** : Vulgarisation de l'impact de l'IA via des métaphores simples (L'eau, le matériel, l'électricité).
+- **Node.js 18+** (testé avec Node 22).
 
-## 🛠️ Technologies Utilisées
+## Démarrer
 
-*   **Framework** : [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) pour des performances optimales.
-*   **Graphiques** : [Recharts](https://recharts.org/) pour la datavisualisation interactive.
-*   **Animations** : [Framer Motion](https://www.framer.com/motion/) pour un rendu UI premium et dynamique (micro-animations, transitions de pages).
-*   **Icônes** : [Lucide React](https://lucide.dev/).
-*   **Styling** : Vanilla CSS organisé avec des variables de thème modernes (Glassmorphism, Dark/Light modes).
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # build de production -> dist/
+npm run preview  # prévisualiser le build
+```
 
-## 🚀 Installation et Lancement Local
+Le serveur de dev **proxifie `/api` vers `http://localhost:8080`** (voir `vite.config.js`),
+donc lancez aussi le backend (`../Green_IT`) pour des données en direct.
 
-Pour lancer le projet sur votre machine locale :
+### Mode démonstration (sans backend)
 
-1.  **Cloner le dépôt :**
-    ```bash
-    git clone https://github.com/alyzee-chan/GreenIT.git
-    cd "GREEN IT"
-    ```
+Chaque page tente l'appel API puis **bascule automatiquement sur des données de démonstration**
+intégrées si le backend est injoignable. Un badge **« Données live » / « Données de démonstration »**
+indique l'état sur chaque module. L'application est donc entièrement explorable sans backend.
 
-2.  **Installer les dépendances :**
-    ```bash
-    npm install
-    ```
+### Comptes de démonstration
 
-3.  **Lancer le serveur de développement :**
-    ```bash
-    npm run dev
-    ```
+`admin@greenit.org / admin123` (ADMIN) · `demo@greenit.org / demo123` (PRO_IT).
+La connexion nécessite que le backend soit démarré.
 
-4.  **Ouvrir l'application :**
-    Accédez à `http://localhost:5173/` dans votre navigateur.
+## Fonctionnalités
+
+- **Thème clair / sombre** : bascule dans la barre latérale (persistée), variables CSS.
+- **Bilingue FR/EN** : bascule dans la barre latérale (persistée).
+- **Auth + RBAC** : routes protégées ; les entrées Alertes / Rapports apparaissent une fois
+  connecté, la Console Admin uniquement pour le rôle `ADMIN`.
+- **Animations** : transitions de page, compteurs animés, barres et cartes au survol.
+
+## Pages
+
+| Route | Contenu |
+|---|---|
+| `/` | Landing publique |
+| `/login`, `/register`, `/profile` | Authentification & profil |
+| `/dashboard` | Centre de pilotage : KPIs, énergie, émissions, minerais, secteurs, carte, Afrique |
+| `/energy` | Carte mondiale des datacenters, PUE, comparatif hyperscalers |
+| `/minerals` | Marché & épuisement des minerais (simulateur) |
+| `/predictions` | Scénarios IA : épuisement, CO2, tension sectorielle |
+| `/alerts` | Centre d'alertes (4 niveaux) + recommandations *(auth)* |
+| `/africa` | AfricaGreen : carte minière, calculateur d'empreinte, annuaire |
+| `/benchmark` | Comparatif sectoriel, scorecard ESG, certifications |
+| `/geopolitics` | Carte des conflits, politiques nationales, tensions |
+| `/community` | Forum, ressources, badges |
+| `/reports` | Exports PDF / Excel / CSV / JSON *(auth)* |
+| `/admin` | Console d'administration *(rôle ADMIN)* |
+| `/builder`, `/water-usage`, `/sensitization` | Sensibilisation & calculateurs |
+
+## Structure
+
+```
+src/
+  api/        client.js (axios + fallback), fallback.js (données démo)
+  store/      auth.js, theme.js (zustand persistés)
+  components/ Sidebar, StatCard, AnimatedNumber, ThemeToggle, MapView, DataSourceBadge, ProtectedRoute
+  pages/      une page par module
+  i18n.js     traductions FR/EN
+```
 
 ---
-*Projet développé dans le cadre de l'intégration de la philosophie Green IT dans les architectures de Data Science.*
+Frontend de l'application **GreenIT** (cahier des charges `GreenIT_Cahier_des_Charges.docx`).
+Voir `../Green_IT/README.md` pour le backend Spring Boot.
