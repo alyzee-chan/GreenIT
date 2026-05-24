@@ -18,6 +18,7 @@ import { useAuth } from '../store/auth';
 import StatCard from '../components/StatCard';
 import DataSourceBadge from '../components/DataSourceBadge';
 import MapView from '../components/MapView';
+import WorldBankCO2 from '../components/WorldBankCO2';
 
 const LEVEL_COLOR = { FAIBLE: '#22C55E', MOYEN: '#F59E0B', CRITIQUE: '#EF4444', CATASTROPHIQUE: '#991B1B' };
 const DONUT = ['#10B981', '#0EA5E9', '#F59E0B', '#8B5CF6', '#EF4444'];
@@ -268,6 +269,11 @@ const Dashboard = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Live World Bank CO2 data */}
+      <motion.div variants={item}>
+        <WorldBankCO2 />
+      </motion.div>
 
       {/* Awareness block */}
       <motion.div variants={item} className="card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white', border: '1px solid #334155', overflow: 'hidden', position: 'relative' }}>
