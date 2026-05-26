@@ -133,7 +133,7 @@ const Dashboard = () => {
       </div>
 
       {/* Energy + Emissions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }} className="builder-grid">
+      <div className="builder-grid" style={{ marginBottom: '1.5rem' }}>
         <motion.div variants={item} className="card">
           <SectionTitle icon={Zap} to="/energy" action="Module Energie">Demande electrique des datacenters (TWh)</SectionTitle>
           <div style={{ height: 300 }}>
@@ -231,7 +231,7 @@ const Dashboard = () => {
       </div>
 
       {/* Map + Sector share + Africa snapshot */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }} className="builder-grid">
+      <div className="builder-grid" style={{ marginBottom: '1.5rem' }}>
         <motion.div variants={item} className="card">
           <SectionTitle icon={Globe2} to="/energy" action="Carte complete">Datacenters dans le monde</SectionTitle>
           <MapView points={mapPoints} center={[25, 15]} zoom={1} height={260} />

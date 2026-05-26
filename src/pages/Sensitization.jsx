@@ -62,7 +62,7 @@ const Sensitization = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="dashboard"
       variants={pageVariants}
       initial="initial"
@@ -83,19 +83,19 @@ const Sensitization = () => {
 
       {/* Tabs Menu */}
       <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
-        <button 
+        <button
           className={`btn ${activeTab === 'literature' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('literature')}
         >
           <BookOpen size={16} /> Revue de Littérature
         </button>
-        <button 
+        <button
           className={`btn ${activeTab === 'actions' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('actions')}
         >
           <CheckSquare size={16} /> Bonnes Pratiques Interactives
         </button>
-        <button 
+        <button
           className={`btn ${activeTab === 'ai-for-good' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('ai-for-good')}
         >
@@ -106,7 +106,7 @@ const Sensitization = () => {
       <AnimatePresence mode="wait">
         {/* Tab 1: Literature */}
         {activeTab === 'literature' && (
-          <motion.div 
+          <motion.div
             key="literature"
             variants={containerVariants}
             initial="hidden"
@@ -114,7 +114,7 @@ const Sensitization = () => {
             exit="hidden"
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
-            <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div className="builder-grid">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <BookOpen size={22} color="var(--primary)" /> Les Références Fondatrices
@@ -124,7 +124,7 @@ const Sensitization = () => {
                 </p>
 
                 {literatureBooks.map((book, index) => (
-                  <motion.div 
+                  <motion.div
                     key={index}
                     className="card"
                     variants={itemVariants}
@@ -143,7 +143,7 @@ const Sensitization = () => {
                 <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ShieldAlert size={22} color="#D97706" /> Les Risques Globaux pour l'Écosystème
                 </h2>
-                
+
                 <div className="card" style={{ background: '#FFFBEB', borderColor: '#FEF3C7' }}>
                   <h4 style={{ color: '#B45309', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Info size={18} /> Risque de Rupture Écologique
@@ -168,7 +168,7 @@ const Sensitization = () => {
 
         {/* Tab 2: Actions Checklist */}
         {activeTab === 'actions' && (
-          <motion.div 
+          <motion.div
             key="actions"
             variants={containerVariants}
             initial="hidden"
@@ -176,7 +176,7 @@ const Sensitization = () => {
             exit="hidden"
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
-            <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+            <div className="builder-grid">
               <div>
                 <h2 style={{ fontSize: '1.4rem', color: 'var(--text-main)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <CheckSquare size={22} color="var(--primary)" /> Votre Feuille de Route Interactive
@@ -187,32 +187,32 @@ const Sensitization = () => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {actionItems.map(item => (
-                    <motion.div 
+                    <motion.div
                       key={item.id}
                       className="card"
                       whileHover={{ scale: 1.01 }}
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'flex-start', 
-                        gap: '1rem', 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '1rem',
                         padding: '1.25rem',
                         borderColor: checkedItems[item.id] ? 'var(--primary)' : 'var(--border)',
                         background: checkedItems[item.id] ? '#F0FDF4' : 'var(--surface)'
                       }}
                     >
-                      <input 
-                        type="checkbox" 
-                        id={item.id} 
-                        checked={!!checkedItems[item.id]} 
+                      <input
+                        type="checkbox"
+                        id={item.id}
+                        checked={!!checkedItems[item.id]}
                         onChange={() => handleCheckboxChange(item.id)}
                         style={{ marginTop: '0.25rem', width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
                       />
                       <label htmlFor={item.id} style={{ fontSize: '0.95rem', cursor: 'pointer', color: 'var(--text-main)' }}>
-                        <span style={{ 
-                          fontSize: '0.75rem', 
-                          fontWeight: 600, 
-                          textTransform: 'uppercase', 
-                          padding: '2px 6px', 
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          padding: '2px 6px',
                           borderRadius: '4px',
                           marginRight: '8px',
                           background: item.category === 'pro' ? '#EFF6FF' : '#F1F5F9',
@@ -228,7 +228,7 @@ const Sensitization = () => {
               </div>
 
               {/* Reward/Score Card */}
-              <div style={{ position: 'sticky', top: '2rem' }}>
+              <div className="score-card-container">
                 <div className="card" style={{ textAlign: 'center', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: 'white', border: 'none' }}>
                   <Award size={48} style={{ margin: '0 auto 1rem' }} />
                   <h3>Votre Score Éco-Responsable</h3>
@@ -246,7 +246,7 @@ const Sensitization = () => {
 
         {/* Tab 3: AI For Good */}
         {activeTab === 'ai-for-good' && (
-          <motion.div 
+          <motion.div
             key="ai-for-good"
             variants={containerVariants}
             initial="hidden"
@@ -254,7 +254,7 @@ const Sensitization = () => {
             exit="hidden"
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
-            <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div className="builder-grid">
               <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '4px solid var(--secondary)' }}>
                 <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary-dark)' }}>
                   <TrendingUp size={20} color="var(--secondary)" /> L'IA pour Réduire les Émissions Globales

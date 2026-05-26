@@ -118,7 +118,7 @@ const Minerals = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="dashboard"
       variants={pageVariants}
       initial="initial"
@@ -141,13 +141,13 @@ const Minerals = () => {
       </motion.div>
 
       {/* Real-time simulated price API ticker */}
-      <motion.div 
+      <motion.div
         className="card"
-        style={{ 
-          marginBottom: '2rem', 
-          background: 'rgba(255, 255, 255, 0.8)', 
+        style={{
+          marginBottom: '2rem',
+          background: 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(10px)',
-          borderColor: 'var(--border)' 
+          borderColor: 'var(--border)'
         }}
         variants={itemVariants}
       >
@@ -176,8 +176,8 @@ const Minerals = () => {
       </motion.div>
 
       {/* Simulator Control Area */}
-      <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', marginBottom: '2rem' }}>
-        
+      <div className="builder-grid" style={{ marginBottom: '2rem' }}>
+
         {/* Main Chart */}
         <motion.div className="card" variants={itemVariants}>
           <h3 className="chart-title">Prédiction des Réserves Restantes (%)</h3>
@@ -203,17 +203,17 @@ const Minerals = () => {
         {/* Prediction Controls & Dashboard Exhaustion Years */}
         <motion.div className="card" variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <h3 className="chart-title">Paramètres de Croissance</h3>
-          
+
           <div style={{ background: 'var(--surface-2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <label style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span>Croissance Annuelle IA</span>
               <span style={{ color: 'var(--primary-dark)' }}>{aiGrowth}%</span>
             </label>
-            <input 
-              type="range" 
-              min="50" 
-              max="400" 
-              value={aiGrowth} 
+            <input
+              type="range"
+              min="50"
+              max="400"
+              value={aiGrowth}
               onChange={(e) => setAiGrowth(Number(e.target.value))}
               style={{ width: '100%', accentColor: 'var(--primary)' }}
             />
@@ -226,7 +226,7 @@ const Minerals = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Horizons d'Épuisement Prévus</h4>
-            
+
             {minerals.map(m => {
               const exhaustYear = calculateExhaustion(m.baseExhaustion);
               return (
@@ -247,7 +247,7 @@ const Minerals = () => {
       </div>
 
       {/* Radar Chart (Sector Impact Analysis) */}
-      <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '2rem' }}>
+      <div className="builder-grid">
         <motion.div className="card" variants={itemVariants}>
           <h3 className="chart-title">Vulnérabilité par Secteurs</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '-1rem', marginBottom: '1.5rem' }}>
@@ -272,7 +272,7 @@ const Minerals = () => {
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.7', marginTop: '1rem' }}>
             Le boom de l'entraînement des IA (notamment via le besoin insatiable de puces GPU Nvidia A100/H100 et de stockage ultra-rapide) a créé un appel d'air colossal sur les réserves mondiales de <strong>Lithium</strong> (pour les batteries de serveurs), de <strong>Cobalt</strong> (durabilité des électrodes), et de <strong>Néodyme</strong> (aimants permanents pour les turbines de ventilation et moteurs de disques durs).
-            <br/><br/>
+            <br /><br />
             Cette surexploitation impacte en cascade tous les secteurs de l'industrie technologique. Si les cycles de vie des matériels d'IA ne sont pas portés à <strong>10 ans (grâce à l'éco-conception de notre Virtual Builder)</strong> au lieu de 18 mois, des crises de production majeures frapperont l'industrie automobile et de la communication avant 2040.
           </p>
         </motion.div>
