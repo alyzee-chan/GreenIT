@@ -3,25 +3,26 @@ import { useTranslation } from 'react-i18next';
 import { Wifi, WifiOff } from 'lucide-react';
 
 const DataSourceBadge = ({ live }) => {
-  const { t } = useTranslation();
   return (
     <span
-      title={live ? t('common.liveData') : t('common.demoData')}
+      title={live ? "Données connectées en temps réel" : "Mode simulation & données de démonstration d'impact"}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '0.4rem',
-        fontSize: '0.72rem',
-        fontWeight: 600,
-        padding: '0.25rem 0.6rem',
-        borderRadius: '999px',
-        background: live ? '#D1FAE5' : '#FEF3C7',
-        color: live ? '#047857' : '#B45309',
-        border: `1px solid ${live ? '#A7F3D0' : '#FDE68A'}`,
+        gap: '0.45rem',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        padding: '0.35rem 0.8rem',
+        borderRadius: '9999px',
+        background: live ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.2)',
+        color: live ? '#22C55E' : '#FFFFFF',
+        border: `1px solid ${live ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255, 255, 255, 0.3)'}`,
+        backdropFilter: 'blur(8px)',
+        letterSpacing: '0.02em',
       }}
     >
-      {live ? <Wifi size={13} /> : <WifiOff size={13} />}
-      {live ? t('common.liveData') : t('common.demoData')}
+      {live ? <Wifi size={13} color="#22C55E" /> : <Wifi size={13} color="#4ADE80" />}
+      {live ? 'Live API Synchronisée' : 'Système Actif · Données Démo'}
     </span>
   );
 };

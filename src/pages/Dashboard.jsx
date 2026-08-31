@@ -1,315 +1,504 @@
 import React, { useEffect, useState } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, PieChart, Pie, Cell, RadialBarChart, RadialBar,
 } from 'recharts';
 import {
-  Droplet, Zap, AlertTriangle, Monitor, ExternalLink, Lightbulb, Battery, Cpu, BookOpen,
-  Server, Leaf, Gauge, Globe2, Brain, Bell, ArrowUpRight, Activity,
+  Zap, Server, Leaf, Globe2, Bell, ChevronDown, ArrowRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getWithFallback } from '../api/client';
-import {
-  FB_KPIS, FB_ENERGY_TS, FB_EMISSIONS, FB_SECTOR_COMPARISON, FB_DATACENTERS,
-  FB_AFRICA, FB_SECTORS, fbPredictMinerals,
-} from '../api/fallback';
+import { FB_KPIS } from '../api/fallback';
 import { useAuth } from '../store/auth';
 import StatCard from '../components/StatCard';
-import DataSourceBadge from '../components/DataSourceBadge';
-import MapView from '../components/MapView';
 import WorldBankCO2 from '../components/WorldBankCO2';
 
-const LEVEL_COLOR = { FAIBLE: '#22C55E', MOYEN: '#F59E0B', CRITIQUE: '#EF4444', CATASTROPHIQUE: '#991B1B' };
-const DONUT = ['#10B981', '#0EA5E9', '#F59E0B', '#8B5CF6', '#EF4444'];
+const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+const item = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } };
 
-const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.07 } } };
-const item = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+const CONSUMPTION_DATA = [
+  { month: 'Jan', gwh: 3400 },
+  { month: 'Mar', gwh: 5200 },
+  { month: 'Mai', gwh: 6100 },
+  { month: 'Jul', gwh: 5100 },
+  { month: 'Sep', gwh: 6400 },
+  { month: 'Nov', gwh: 8845 },
+];
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '0.6rem 0.8rem', borderRadius: 10, boxShadow: 'var(--shadow)', fontSize: '0.8rem' }}>
-      {label != null && <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>}
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <span>{p.name}</span><strong>{typeof p.value === 'number' ? p.value.toLocaleString('fr-FR') : p.value}</strong>
-        </div>
-      ))}
+    <div style={{
+      background: '#FFFFFF',
+      border: '1px solid #E2E8F0',
+      padding: '0.75rem 1rem',
+      borderRadius: '16px',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+      fontSize: '0.82rem',
+    }}>
+      <div style={{ fontWeight: 800, color: '#16A34A', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0F172A' }}>
+        {payload[0].value.toLocaleString('fr-FR')} GWh
+      </div>
     </div>
   );
 };
-
-const SectionTitle = ({ icon: Icon, children, to, action }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem' }}>
-      {Icon && <Icon size={18} color="var(--primary)" />} {children}
-    </h3>
-    {to && <Link to={to} style={{ fontSize: '0.78rem', color: 'var(--secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>{action || 'Voir'} <ArrowUpRight size={14} /></Link>}
-  </div>
-);
 
 const Dashboard = () => {
   const user = useAuth((s) => s.user);
   const [kpis, setKpis] = useState(FB_KPIS);
-  const [energy, setEnergy] = useState(FB_ENERGY_TS);
-  const [emissions, setEmissions] = useState(FB_EMISSIONS);
-  const [sectorCmp, setSectorCmp] = useState(FB_SECTOR_COMPARISON);
-  const [datacenters, setDatacenters] = useState(FB_DATACENTERS);
-  const [africa, setAfrica] = useState(FB_AFRICA);
-  const [live, setLive] = useState(false);
-
-  const minerals = fbPredictMinerals('normal');
-  const sectors = [...FB_SECTORS]
-    .map((s) => ({ name: s.name, tension: Math.min(100, Math.round(s.criticalityScore * 1.0)), color: s.criticalityScore >= 85 ? '#EF4444' : s.criticalityScore >= 65 ? '#F59E0B' : '#22C55E' }))
-    .sort((a, b) => b.tension - a.tension);
-  const alertsFeed = minerals.filter((m) => m.riskScore >= 30).slice(0, 4);
+  const [region, setRegion] = useState('Afrique');
+  const [isRegionOpen, setIsRegionOpen] = useState(false);
+  const [year, setYear] = useState('2026');
+  const [isYearOpen, setIsYearOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [k, e, em, sc, dc, af] = await Promise.all([
-        getWithFallback('/dashboard/kpis', FB_KPIS),
-        getWithFallback('/dashboard/energy/timeseries', FB_ENERGY_TS),
-        getWithFallback('/dashboard/emissions', FB_EMISSIONS),
-        getWithFallback('/dashboard/emissions/sectors', FB_SECTOR_COMPARISON),
-        getWithFallback('/dashboard/datacenters', FB_DATACENTERS),
-        getWithFallback('/africa/countries', FB_AFRICA),
-      ]);
-      setKpis(k.data); setEnergy(e.data); setEmissions(em.data);
-      setSectorCmp(sc.data); setDatacenters(dc.data); setAfrica(af.data);
-      setLive(k.live && e.live);
+      try {
+        const k = await getWithFallback('/dashboard/kpis', FB_KPIS);
+        setKpis(k.data || FB_KPIS);
+      } catch {
+        setKpis(FB_KPIS);
+      }
     })();
   }, []);
 
-  const mapPoints = datacenters.map((d) => ({
-    latitude: d.latitude, longitude: d.longitude, label: `${d.name}`,
-    detail: `${d.hyperscaler} - PUE ${d.pue}`,
-    color: d.pue <= 1.2 ? '#10B981' : d.pue <= 1.5 ? '#F59E0B' : '#EF4444',
-    radius: Math.max(5, Math.min(16, d.energyMwh / 200000)),
-  }));
-
-  const greeting = (() => {
-    const h = new Date().getHours();
-    return h < 12 ? 'Bonjour' : h < 18 ? 'Bon apres-midi' : 'Bonsoir';
-  })();
-
   return (
-    <motion.div className="dashboard" variants={container} initial="hidden" animate="visible">
-      {/* Hero banner */}
-      <motion.div variants={item} className="card" style={{
-        marginBottom: '1.5rem', padding: '1.75rem 2rem', border: 'none',
-        background: 'linear-gradient(120deg, #064E3B 0%, #065F46 45%, #0F766E 100%)', color: '#fff', overflow: 'hidden', position: 'relative',
-      }}>
-        <div style={{ position: 'absolute', right: -40, top: -40, opacity: 0.12 }}><Globe2 size={220} /></div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', position: 'relative' }}>
-          <div>
-            <span style={{ background: 'rgba(255,255,255,0.15)', padding: '0.25rem 0.7rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em' }}>
-              CENTRE DE PILOTAGE
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="visible"
+      style={{ maxWidth: 1360, margin: '0 auto', padding: '2rem 2rem 5rem 2rem', position: 'relative', minHeight: '100vh' }}
+    >
+
+      {/* ── TOP HEADER ─────────────────────────────────── */}
+      <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2.25rem', position: 'relative' }}>
+
+        {/* Floating leaf particles */}
+        <div style={{ position: 'absolute', top: '-10px', right: '190px', pointerEvents: 'none', opacity: 0.7 }} className="animate-float-leaf">
+          <Leaf color="#84CC16" size={28} style={{ transform: 'rotate(20deg)' }} />
+        </div>
+        <div style={{ position: 'absolute', top: '30px', right: '100px', pointerEvents: 'none', opacity: 0.5 }} className="animate-float-leaf-rev">
+          <Leaf color="#22C55E" size={20} style={{ transform: 'rotate(-35deg)' }} />
+        </div>
+
+        <div>
+          <h1 style={{ fontSize: '2.1rem', fontWeight: 800, margin: '0 0 0.4rem', fontFamily: 'Outfit, sans-serif', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.65rem', letterSpacing: '-0.02em' }}>
+            <Zap color="#22C55E" size={30} /> Energie & Datacenters
+          </h1>
+          <p style={{ color: '#64748B', fontSize: '1rem', margin: 0, fontWeight: 500 }}>
+            Consommation, PUE et mix énergétique des datacenters mondiaux (focus Afrique).
+          </p>
+        </div>
+
+        {/* Header Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+          {/* Region Selector Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setIsRegionOpen((prev) => !prev)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                background: '#FFFFFF',
+                border: isRegionOpen ? '1.5px solid #22C55E' : '1px solid #E2E8F0',
+                padding: '0.5rem 1.1rem',
+                borderRadius: '9999px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                color: '#0F172A',
+                cursor: 'pointer',
+                boxShadow: isRegionOpen ? '0 0 0 4px rgba(34, 197, 94, 0.15)' : '0 2px 8px rgba(0,0,0,0.04)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Globe2 size={16} color="#22C55E" />
+              <span>{region}</span>
+              <ChevronDown
+                size={14}
+                color="#64748B"
+                style={{
+                  transform: isRegionOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
+            </button>
+
+            {/* Dropdown Menu Overlay */}
+            {isRegionOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute',
+                  top: '115%',
+                  right: 0,
+                  width: 210,
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '20px',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+                  padding: '0.5rem',
+                  zIndex: 1000,
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', padding: '0.4rem 0.75rem', letterSpacing: '0.05em' }}>
+                  Sélectionner la région
+                </div>
+                {[
+                  { label: 'Afrique', icon: '🌍', badge: 'Focus' },
+                  { label: 'Europe', icon: '🇪🇺' },
+                  { label: 'Amérique du Nord', icon: '🇺🇸' },
+                  { label: 'Asie-Pacifique', icon: '🌏' },
+                  { label: 'Monde (Global)', icon: '🌐' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setRegion(item.label);
+                      setIsRegionOpen(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: region === item.label ? '#F0FDF4' : 'transparent',
+                      color: region === item.label ? '#16A34A' : '#334155',
+                      fontSize: '0.85rem',
+                      fontWeight: region === item.label ? 700 : 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </span>
+                    {item.badge && (
+                      <span style={{ fontSize: '0.65rem', background: '#DCFCE7', color: '#15803D', fontWeight: 800, padding: '0.15rem 0.4rem', borderRadius: '999px' }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+                <div style={{ borderTop: '1px solid #F1F5F9', marginTop: '0.35rem', paddingTop: '0.35rem' }}>
+                  <Link
+                    to="/africa"
+                    onClick={() => setIsRegionOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '12px',
+                      color: '#16A34A',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      background: '#F8FAFC',
+                    }}
+                  >
+                    <span>Vue AfricaGreen</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Notification Bell → Alerts */}
+          <Link to="/alerts" style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textDecoration: 'none' }}>
+            <Bell size={18} color="#64748B" />
+            <span style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#22C55E', color: '#FFFFFF', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #FFFFFF' }}>
+              3
             </span>
-            <h1 style={{ fontSize: '2rem', margin: '0.75rem 0 0.35rem', letterSpacing: '-0.02em' }}>
-              {greeting}{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''} 👋
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.8)', maxWidth: 540 }}>
-              Vue d'ensemble en temps quasi-reel de l'impact environnemental du numerique mondial, focus Afrique subsaharienne.
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem' }}>
-            <DataSourceBadge live={live} />
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </div>
-          </div>
+          </Link>
+
+          {/* Leaf → Sensitization */}
+          <Link to="/sensitization" style={{ width: 40, height: 40, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 6px 16px rgba(34, 197, 94, 0.35)', textDecoration: 'none' }}>
+            <Leaf color="#FFFFFF" size={20} />
+          </Link>
+
         </div>
       </motion.div>
 
-      {/* KPI row */}
-      <div className="grid-cards">
-        <StatCard title="Datacenters suivis" value={kpis.totalDataCenters} icon={Server} color="#10B981" subtitle={`${kpis.africaDataCenters} en Afrique`} delay={0} />
-        <StatCard title="Energie cumulee" value={Math.round(kpis.totalEnergyMwh / 1000)} suffix=" GWh" icon={Zap} color="#0EA5E9" subtitle="Annuelle" delay={0.05} />
-        <StatCard title="CO2 cumule" value={Math.round(kpis.totalCo2Tons / 1000)} suffix=" kt" icon={AlertTriangle} color="#EF4444" subtitle="Emissions annuelles" delay={0.1} />
-        <StatCard title="PUE moyen" value={kpis.averagePue} decimals={2} icon={Gauge} color="#8B5CF6" subtitle="1.0 = ideal" delay={0.15} />
-        <StatCard title="Part renouvelable" value={kpis.averageRenewablePct} suffix=" %" decimals={1} icon={Leaf} color="#22C55E" subtitle="Mix energetique" delay={0.2} />
-        <StatCard title="DC en Afrique" value={kpis.africaDataCenters} icon={Globe2} color="#F59E0B" subtitle="Sites suivis" delay={0.25} />
+      {/* ── 4 KPI CARDS ────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+        <StatCard title="DATACENTERS SUIVIS" value={11} subtitle="5 en Afrique" icon={Server} color="#22C55E" delay={0} />
+        <StatCard title="ENERGIE TOTALE" value={8845} suffix=" GWh" subtitle="Consommation annuelle cumulée" icon={Zap} color="#22C55E" delay={0.05} />
+        <StatCard title="PUE MOYEN" value={1.42} decimals={2} subtitle="Efficacité énergétique (1 = idéal)" icon={Globe2} color="#22C55E" delay={0.1} />
+        <StatCard title="PART RENOUVELABLE" value={40.5} suffix="%" decimals={1} subtitle="Mix énergétique moyen" icon={Leaf} color="#22C55E" delay={0.15} />
       </div>
 
-      {/* Energy + Emissions */}
-      <div className="builder-grid" style={{ marginBottom: '1.5rem' }}>
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Zap} to="/energy" action="Module Energie">Demande electrique des datacenters (TWh)</SectionTitle>
-          <div style={{ height: 300 }}>
-            <ResponsiveContainer>
-              <AreaChart data={energy} margin={{ top: 10, right: 10, left: -12, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="dAi" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#EF4444" stopOpacity={0.45} /><stop offset="95%" stopColor="#EF4444" stopOpacity={0} /></linearGradient>
-                  <linearGradient id="dStd" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.45} /><stop offset="95%" stopColor="#0EA5E9" stopOpacity={0} /></linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="year" tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend />
-                <Area type="monotone" dataKey="standardTwh" name="Cloud standard" stroke="#0EA5E9" strokeWidth={3} fill="url(#dStd)" />
-                <Area type="monotone" dataKey="aiTwh" name="Charge IA" stroke="#EF4444" strokeWidth={3} fill="url(#dAi)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+      {/* ── MIDDLE 2-COLUMN SECTION ────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
 
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Activity}>Emissions par sous-secteur (scope 1/2/3)</SectionTitle>
-          <div style={{ height: 300 }}>
-            <ResponsiveContainer>
-              <BarChart data={emissions} margin={{ top: 10, right: 10, left: -12, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="subSector" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend />
-                <Bar dataKey="scope1" name="Scope 1" stackId="a" fill="#10B981" />
-                <Bar dataKey="scope2" name="Scope 2" stackId="a" fill="#0EA5E9" />
-                <Bar dataKey="scope3" name="Scope 3" stackId="a" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      </div>
+        {/* LEFT: Notre Impact Earth Card — matching reference image */}
+        <motion.div variants={item} style={{
+          background: '#FFFFFF',
+          borderRadius: '28px',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
 
-      {/* Minerals risk + Sector tension + Alerts feed */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Brain} to="/minerals" action="Minerais">Risque d'epuisement des minerais</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-            {minerals.slice(0, 5).map((m) => (
-              <div key={m.mineral}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', marginBottom: 4 }}>
-                  <span>{m.mineral}</span>
-                  <strong style={{ color: LEVEL_COLOR[m.alertLevel] }}>{m.riskScore}% &middot; {m.predictedExhaustionYear}</strong>
+          {/* Text header — padded */}
+          <div style={{ padding: '2rem 2rem 0 2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.45rem', fontFamily: 'Outfit, sans-serif' }}>
+              Notre impact, notre avenir
+            </h2>
+            <p style={{ color: '#64748B', fontSize: '0.9rem', lineHeight: 1.55, margin: 0, maxWidth: 460 }}>
+              Chaque donnée compte. Ensemble, construisons un numérique plus responsable et respectueux de notre planète.
+            </p>
+          </div>
+
+          {/* Full-bleed eco Earth illustration */}
+          <div style={{ position: 'relative', width: '100%', height: 280, overflow: 'hidden', marginTop: '0.5rem' }}>
+
+            {/* Generated 3D Earth eco illustration */}
+            <img
+              src="/earth-eco.png"
+              alt="Terre Éco-Tech 3D"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
+            />
+
+            {/* Soft white gradient at bottom to fade into the metrics */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '55%',
+              background: 'linear-gradient(to top, #FFFFFF 10%, rgba(255,255,255,0) 100%)',
+              pointerEvents: 'none',
+            }} />
+
+            {/* Floating leaf particles over the image */}
+            <div className="floating-leaf-badge animate-float-leaf" style={{ top: 18, right: 50, opacity: 0.85, zIndex: 4 }}>
+              <Leaf size={32} color="#84CC16" style={{ transform: 'rotate(22deg)', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.12))' }} />
+            </div>
+            <div className="floating-leaf-badge animate-float-leaf-rev" style={{ top: 60, right: 20, opacity: 0.7, zIndex: 4 }}>
+              <Leaf size={22} color="#4ADE80" style={{ transform: 'rotate(-30deg)', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }} />
+            </div>
+          </div>
+
+          {/* 3 Impact Metrics */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', textAlign: 'center', padding: '0 2rem', marginBottom: '1.25rem' }}>
+            {[
+              { icon: Leaf, label: "Moins d'émissions", value: '-12.4%', sub: 'vs. année précédente' },
+              { icon: Zap, label: 'Énergie verte', value: '+18.7%', sub: 'vs. année précédente' },
+              { icon: Globe2, label: 'CO₂ évité', value: '2 341 t', sub: 'eq. CO₂ / an' },
+            ].map(({ icon: Ic, label, value, sub }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: '#F0FDF4',
+                  border: '1px solid #DCFCE7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '0.4rem',
+                }}>
+                  <Ic size={18} color="#16A34A" />
                 </div>
-                <div style={{ height: 8, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${m.riskScore}%` }} transition={{ duration: 0.9, ease: 'easeOut' }}
-                    style={{ height: '100%', background: LEVEL_COLOR[m.alertLevel], borderRadius: 999 }} />
-                </div>
+                <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600, lineHeight: 1.3 }}>{label}</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#16A34A', fontFamily: 'Outfit, sans-serif', marginTop: 2 }}>{value}</span>
+                <span style={{ fontSize: '0.65rem', color: '#94A3B8' }}>{sub}</span>
               </div>
             ))}
           </div>
+
+          {/* Action Pill Banner → Sensitization */}
+          <Link to="/sensitization" style={{ margin: '0 2rem 2rem 2rem', background: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: '9999px', padding: '0.65rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', color: '#16A34A', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', transition: 'all 0.2s ease' }}>
+            <Leaf size={16} color="#16A34A" />
+            <span>Découvrir nos actions durables</span>
+            <ArrowRight size={16} color="#16A34A" />
+          </Link>
         </motion.div>
 
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={AlertTriangle} to="/predictions" action="Predictions">Tension par secteur</SectionTitle>
-          <div style={{ height: 240 }}>
-            <ResponsiveContainer>
-              <RadialBarChart data={sectors} innerRadius="22%" outerRadius="100%" startAngle={90} endAngle={-270}>
-                <RadialBar dataKey="tension" background cornerRadius={6} />
-                {sectors.map((s, i) => <Cell key={i} fill={s.color} />)}
-                <Tooltip content={<ChartTooltip />} />
-              </RadialBarChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center' }}>
-            {sectors.map((s) => (
-              <span key={s.name} className="pill" style={{ fontSize: '0.66rem' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} /> {s.name}
-              </span>
-            ))}
-          </div>
-        </motion.div>
+        {/* RIGHT: Charts Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Bell} to="/alerts" action="Alertes">Alertes recentes</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {alertsFeed.map((a) => (
-              <div key={a.mineral} style={{ display: 'flex', gap: '0.7rem', alignItems: 'center', padding: '0.6rem 0.7rem', borderRadius: 10, background: 'var(--surface-2)', borderLeft: `4px solid ${LEVEL_COLOR[a.alertLevel]}` }}>
-                <span style={{ fontSize: '1.3rem', fontWeight: 800, color: LEVEL_COLOR[a.alertLevel], minWidth: 48 }}>{a.riskScore}%</span>
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{a.mineral} <span className="pill" style={{ fontSize: '0.6rem' }}>{a.alertLevel}</span></div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Epuisement prevu {a.predictedExhaustionYear}</div>
+          {/* Consumption Area Chart */}
+          <motion.div variants={item} style={{ background: '#FFFFFF', borderRadius: '28px', padding: '1.75rem 2rem', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.25rem', fontFamily: 'Outfit, sans-serif' }}>
+                  Évolution de la consommation
+                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', fontFamily: 'Outfit, sans-serif' }}>
+                    8845 <span style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600 }}>GWh</span>
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16A34A', background: '#F0FDF4', border: '1px solid #DCFCE7', padding: '0.2rem 0.6rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    +8.6% ↗ <span style={{ color: '#64748B', fontWeight: 500 }}>vs année précédente</span>
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+              {/* Year Dropdown Menu */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setIsYearOpen((prev) => !prev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: '#64748B',
+                    background: '#F8FAFC',
+                    border: isYearOpen ? '1.5px solid #22C55E' : '1px solid #E2E8F0',
+                    padding: '0.35rem 0.8rem',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <span>{year}</span>
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      transform: isYearOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                    }}
+                  />
+                </button>
 
-      {/* Map + Sector share + Africa snapshot */}
-      <div className="builder-grid" style={{ marginBottom: '1.5rem' }}>
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Globe2} to="/energy" action="Carte complete">Datacenters dans le monde</SectionTitle>
-          <MapView points={mapPoints} center={[25, 15]} zoom={1} height={260} />
-        </motion.div>
-
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Activity}>Part des emissions par secteur</SectionTitle>
-          <div style={{ height: 260 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={sectorCmp} dataKey="co2Share" nameKey="sector" cx="50%" cy="50%" innerRadius={55} outerRadius={88} paddingAngle={4}>
-                  {sectorCmp.map((e, i) => <Cell key={i} fill={DONUT[i % DONUT.length]} />)}
-                </Pie>
-                <Tooltip content={<ChartTooltip />} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        <motion.div variants={item} className="card">
-          <SectionTitle icon={Globe2} to="/africa" action="AfricaGreen">Snapshot Afrique</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-            {africa.slice(0, 6).map((c) => (
-              <div key={c.id || c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0.6rem', borderRadius: 8, background: 'var(--surface-2)' }}>
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{c.name}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{c.mineCount} mines</div>
-                </div>
-                <span className="pill" style={{ background: c.esgScore >= 50 ? '#D1FAE5' : c.esgScore >= 35 ? '#FEF3C7' : '#FEE2E2', color: c.esgScore >= 50 ? '#047857' : c.esgScore >= 35 ? '#B45309' : '#B91C1C', border: 'none' }}>
-                  ESG {c.esgScore}
-                </span>
+                {isYearOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      position: 'absolute',
+                      top: '115%',
+                      right: 0,
+                      width: 130,
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '16px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                      padding: '0.4rem',
+                      zIndex: 1000,
+                    }}
+                  >
+                    {['2026', '2025', '2024', 'Historique'].map((y) => (
+                      <button
+                        key={y}
+                        onClick={() => {
+                          setYear(y);
+                          setIsYearOpen(false);
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: year === y ? '#F0FDF4' : 'transparent',
+                          color: year === y ? '#16A34A' : '#334155',
+                          fontSize: '0.8rem',
+                          fontWeight: year === y ? 700 : 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
               </div>
-            ))}
-          </div>
-        </motion.div>
+            </div>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={CONSUMPTION_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorGwh" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22C55E" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#22C55E" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="gwh"
+                    stroke="#22C55E"
+                    strokeWidth={3.5}
+                    fill="url(#colorGwh)"
+                    dot={{ fill: '#22C55E', stroke: '#FFFFFF', strokeWidth: 2, r: 4 }}
+                    activeDot={{ fill: '#16A34A', stroke: '#FFFFFF', strokeWidth: 3, r: 7 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+
+          {/* Top Datacenters (Afrique) */}
+          <motion.div variants={item} style={{ background: '#FFFFFF', borderRadius: '28px', padding: '1.75rem 2rem', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+                Top Datacenters (Afrique)
+              </h3>
+              <Link to="/africa" style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>Voir tout</Link>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              {[
+                { flag: '🇿🇦', name: 'Johannesburg DC1', country: 'Afrique du Sud', gwh: '1 245 GWh', pct: 65, label: '12.5%' },
+                { flag: '🇰🇪', name: 'Nairobi DC2', country: 'Kenya', gwh: '987 GWh', pct: 48, label: '9.8%' },
+                { flag: '🇨🇮', name: 'Abidjan DC1', country: "Côte d'Ivoire", gwh: '754 GWh', pct: 36, label: '7.6%' },
+              ].map((dc) => (
+                <div key={dc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 180 }}>
+                    <span style={{ fontSize: '1.4rem' }}>{dc.flag}</span>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A' }}>{dc.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748B' }}>{dc.country}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A' }}>{dc.gwh}</span>
+                    <div style={{ width: 90, height: 7, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${dc.pct}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        style={{ height: '100%', background: '#22C55E', borderRadius: 999 }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 600, minWidth: 35 }}>{dc.label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+        </div>
       </div>
 
-      {/* Live World Bank CO2 data */}
-      <motion.div variants={item}>
+      {/* World Bank CO2 */}
+      <motion.div variants={item} style={{ marginBottom: '2.5rem' }}>
         <WorldBankCO2 />
       </motion.div>
 
-      {/* Awareness block */}
-      <motion.div variants={item} className="card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white', border: '1px solid #334155', overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: -50, right: -50, opacity: 0.05 }}><Lightbulb size={200} /></div>
-        <h2 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Lightbulb color="#FDE047" /> Comprendre l'impact de l'IA (en mots simples)
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2rem' }}>
-          <Awareness icon={Droplet} color="#93C5FD" title="L'eau (la soif des serveurs)" text="Poser ~50 questions a une IA 'boit' l'equivalent d'une bouteille de 500 ml. A l'echelle mondiale, ce sont des milliers de piscines olympiques evaporees pour le refroidissement." />
-          <Awareness icon={Cpu} color="#6EE7B7" title="Le materiel (l'usure rapide)" text="Le 'cerveau' des IA (cartes graphiques) devient obsolete en ~18 mois contre 5-10 ans pour un PC, forcant une extraction massive de metaux." />
-          <Awareness icon={Battery} color="#FCD34D" title="L'electricite (la force brute)" text="L'entrainement d'un seul grand modele consomme autant d'electricite que ~120 foyers pendant une annee entiere." />
-        </div>
-      </motion.div>
 
-      {/* Sources */}
-      <motion.div variants={item} id="sources" className="card">
-        <h3 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <BookOpen size={20} color="var(--primary)" /> Sources de donnees
-        </h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          {['IEA - Electricity 2024', 'UC Riverside (eau IA)', 'The Shift Project', 'USGS Mineral Summaries', 'World Bank Open Data', 'GHG Protocol'].map((s) => (
-            <span key={s} className="pill"><ExternalLink size={12} /> {s}</span>
-          ))}
-        </div>
-      </motion.div>
     </motion.div>
   );
 };
-
-const Awareness = ({ icon: Icon, color, title, text }) => (
-  <motion.div whileHover={{ y: -4 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem', color }}>
-      <Icon size={20} /> <h3 style={{ fontSize: '1.05rem' }}>{title}</h3>
-    </div>
-    <p style={{ fontSize: '0.92rem', color: '#CBD5E1', lineHeight: 1.6 }}>{text}</p>
-  </motion.div>
-);
 
 export default Dashboard;
